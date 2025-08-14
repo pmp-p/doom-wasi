@@ -9,5 +9,6 @@
 Debug/
 Release/
 Build/
-doomgeneric
+/doomgeneric/doomgeneric
 doomgeneric.map
+doom1.wad

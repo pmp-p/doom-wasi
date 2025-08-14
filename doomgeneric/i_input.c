@@ -19,11 +19,383 @@
 #include <math.h>
 #include <string.h>
 #include <fcntl.h>
+
+#if !defined(O_NONBLOCK)
+#define F_GETFL  3
+#define F_SETFL  4
+#define O_NONBLOCK    04000
+int fcntl(int fd, int cmd, ...) {
+    return -1;
+}
+#endif
+
 #include <stdio.h>
 
-#include <linux/kd.h> // KDGKBTYPE, KB_84, KB_101, KDSKBMODE, K_MEDIUMRAW
-#include <sys/ioctl.h> // ioctl()
-#include <termios.h>  // raw tty init
+#if !defined(XCC)
+#   include <linux/kd.h> // KDGKBTYPE, KB_84, KB_101, KDSKBMODE, K_MEDIUMRAW
+#   include <sys/ioctl.h> // ioctl()
+#   include <termios.h>  // raw tty init
+#else
+
+// ====================================================================================
+// <linux/kd.h>
+#define 	KB_84		0x01
+#define 	KB_101		0x02
+#define KDSKBMODE	0x4B45	/* sets current keyboard mode */
+#define KDGKBTYPE	0x4B33
+#define KDGKBMODE	0x4B44
+#define	K_MEDIUMRAW	0x02
+
+
+
+// ====================================================================================
+#define _IOC(a,b,c,d) ( ((a)<<30) | ((b)<<8) | (c) | ((d)<<16) )
+#define _IOC_NONE  0U
+#define _IOC_WRITE 1U
+#define _IOC_READ  2U
+
+#define _IO(a,b) _IOC(_IOC_NONE,(a),(b),0)
+#define _IOW(a,b,c) _IOC(_IOC_WRITE,(a),(b),sizeof(c))
+#define _IOR(a,b,c) _IOC(_IOC_READ,(a),(b),sizeof(c))
+#define _IOWR(a,b,c) _IOC(_IOC_READ|_IOC_WRITE,(a),(b),sizeof(c))
+
+#define TCGETS		0x5401
+#define TCSETS		0x5402
+#define TCSETSW		0x5403
+#define TCSETSF		0x5404
+#define TCGETA		0x5405
+#define TCSETA		0x5406
+#define TCSETAW		0x5407
+#define TCSETAF		0x5408
+#define TCSBRK		0x5409
+#define TCXONC		0x540A
+#define TCFLSH		0x540B
+#define TIOCEXCL	0x540C
+#define TIOCNXCL	0x540D
+#define TIOCSCTTY	0x540E
+#define TIOCGPGRP	0x540F
+#define TIOCSPGRP	0x5410
+#define TIOCOUTQ	0x5411
+#define TIOCSTI		0x5412
+#define TIOCGWINSZ	0x5413
+#define TIOCSWINSZ	0x5414
+#define TIOCMGET	0x5415
+#define TIOCMBIS	0x5416
+#define TIOCMBIC	0x5417
+#define TIOCMSET	0x5418
+#define TIOCGSOFTCAR	0x5419
+#define TIOCSSOFTCAR	0x541A
+#define FIONREAD	0x541B
+#define TIOCINQ		FIONREAD
+#define TIOCLINUX	0x541C
+#define TIOCCONS	0x541D
+#define TIOCGSERIAL	0x541E
+#define TIOCSSERIAL	0x541F
+#define TIOCPKT		0x5420
+#define FIONBIO		0x5421
+#define TIOCNOTTY	0x5422
+#define TIOCSETD	0x5423
+#define TIOCGETD	0x5424
+#define TCSBRKP		0x5425
+#define TIOCSBRK	0x5427
+#define TIOCCBRK	0x5428
+#define TIOCGSID	0x5429
+#define TIOCGRS485	0x542E
+#define TIOCSRS485	0x542F
+#define TIOCGPTN	0x80045430
+#define TIOCSPTLCK	0x40045431
+#define TIOCGDEV	0x80045432
+#define TCGETX		0x5432
+#define TCSETX		0x5433
+#define TCSETXF		0x5434
+#define TCSETXW		0x5435
+#define TIOCSIG		0x40045436
+#define TIOCVHANGUP	0x5437
+#define TIOCGPKT	0x80045438
+#define TIOCGPTLCK	0x80045439
+#define TIOCGEXCL	0x80045440
+#define TIOCGPTPEER	0x5441
+#define TIOCGISO7816	0x80285442
+#define TIOCSISO7816	0xc0285443
+
+#define FIONCLEX	0x5450
+#define FIOCLEX		0x5451
+#define FIOASYNC	0x5452
+#define TIOCSERCONFIG	0x5453
+#define TIOCSERGWILD	0x5454
+#define TIOCSERSWILD	0x5455
+#define TIOCGLCKTRMIOS	0x5456
+#define TIOCSLCKTRMIOS	0x5457
+#define TIOCSERGSTRUCT	0x5458
+#define TIOCSERGETLSR   0x5459
+#define TIOCSERGETMULTI 0x545A
+#define TIOCSERSETMULTI 0x545B
+
+#define TIOCMIWAIT	0x545C
+#define TIOCGICOUNT	0x545D
+#define FIOQSIZE	0x5460
+
+#define TIOCM_LE        0x001
+#define TIOCM_DTR       0x002
+#define TIOCM_RTS       0x004
+#define TIOCM_ST        0x008
+#define TIOCM_SR        0x010
+#define TIOCM_CTS       0x020
+#define TIOCM_CAR       0x040
+#define TIOCM_RNG       0x080
+#define TIOCM_DSR       0x100
+#define TIOCM_CD        TIOCM_CAR
+#define TIOCM_RI        TIOCM_RNG
+#define TIOCM_OUT1      0x2000
+#define TIOCM_OUT2      0x4000
+#define TIOCM_LOOP      0x8000
+
+#define FIOSETOWN       0x8901
+#define SIOCSPGRP       0x8902
+#define FIOGETOWN       0x8903
+#define SIOCGPGRP       0x8904
+#define SIOCATMARK      0x8905
+#if __LONG_MAX == 0x7fffffff
+#   define SIOCGSTAMP      _IOR(0x89, 6, char[16])
+#   define SIOCGSTAMPNS    _IOR(0x89, 7, char[16])
+#else
+#   define SIOCGSTAMP      0x8906
+#   define SIOCGSTAMPNS    0x8907
+#endif
+
+int ioctl(int fd, unsigned long request, ...) {
+    return -1;
+}
+// ====================================================================================
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* #include <features.h>
+
+#define __NEED_pid_t
+#define __NEED_struct_winsize
+
+#include <bits/alltypes.h>
+*/
+
+typedef unsigned char cc_t;
+typedef unsigned int speed_t;
+typedef unsigned int tcflag_t;
+
+#define NCCS 32
+
+// #include <bits/termios.h>
+
+struct termios {
+	tcflag_t c_iflag;
+	tcflag_t c_oflag;
+	tcflag_t c_cflag;
+	tcflag_t c_lflag;
+	cc_t c_line;
+	cc_t c_cc[NCCS];
+	speed_t __c_ispeed;
+	speed_t __c_ospeed;
+};
+
+#define VINTR     0
+#define VQUIT     1
+#define VERASE    2
+#define VKILL     3
+#define VEOF      4
+#define VTIME     5
+#define VMIN      6
+#define VSWTC     7
+#define VSTART    8
+#define VSTOP     9
+#define VSUSP    10
+#define VEOL     11
+#define VREPRINT 12
+#define VDISCARD 13
+#define VWERASE  14
+#define VLNEXT   15
+#define VEOL2    16
+
+#define IGNBRK  0000001
+#define BRKINT  0000002
+#define IGNPAR  0000004
+#define PARMRK  0000010
+#define INPCK   0000020
+#define ISTRIP  0000040
+#define INLCR   0000100
+#define IGNCR   0000200
+#define ICRNL   0000400
+#define IUCLC   0001000
+#define IXON    0002000
+#define IXANY   0004000
+#define IXOFF   0010000
+#define IMAXBEL 0020000
+#define IUTF8   0040000
+
+#define OPOST  0000001
+#define OLCUC  0000002
+#define ONLCR  0000004
+#define OCRNL  0000010
+#define ONOCR  0000020
+#define ONLRET 0000040
+#define OFILL  0000100
+#define OFDEL  0000200
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE) || defined(_XOPEN_SOURCE)
+#define NLDLY  0000400
+#define NL0    0000000
+#define NL1    0000400
+#define CRDLY  0003000
+#define CR0    0000000
+#define CR1    0001000
+#define CR2    0002000
+#define CR3    0003000
+#define TABDLY 0014000
+#define TAB0   0000000
+#define TAB1   0004000
+#define TAB2   0010000
+#define TAB3   0014000
+#define BSDLY  0020000
+#define BS0    0000000
+#define BS1    0020000
+#define FFDLY  0100000
+#define FF0    0000000
+#define FF1    0100000
+#endif
+
+#define VTDLY  0040000
+#define VT0    0000000
+#define VT1    0040000
+
+#define B0       0000000
+#define B50      0000001
+#define B75      0000002
+#define B110     0000003
+#define B134     0000004
+#define B150     0000005
+#define B200     0000006
+#define B300     0000007
+#define B600     0000010
+#define B1200    0000011
+#define B1800    0000012
+#define B2400    0000013
+#define B4800    0000014
+#define B9600    0000015
+#define B19200   0000016
+#define B38400   0000017
+
+#define B57600   0010001
+#define B115200  0010002
+#define B230400  0010003
+#define B460800  0010004
+#define B500000  0010005
+#define B576000  0010006
+#define B921600  0010007
+#define B1000000 0010010
+#define B1152000 0010011
+#define B1500000 0010012
+#define B2000000 0010013
+#define B2500000 0010014
+#define B3000000 0010015
+#define B3500000 0010016
+#define B4000000 0010017
+
+#define CSIZE  0000060
+#define CS5    0000000
+#define CS6    0000020
+#define CS7    0000040
+#define CS8    0000060
+#define CSTOPB 0000100
+#define CREAD  0000200
+#define PARENB 0000400
+#define PARODD 0001000
+#define HUPCL  0002000
+#define CLOCAL 0004000
+
+#define ISIG   0000001
+#define ICANON 0000002
+#define ECHO   0000010
+#define ECHOE  0000020
+#define ECHOK  0000040
+#define ECHONL 0000100
+#define NOFLSH 0000200
+#define TOSTOP 0000400
+#define IEXTEN 0100000
+
+#define TCOOFF 0
+#define TCOON  1
+#define TCIOFF 2
+#define TCION  3
+
+#define TCIFLUSH  0
+#define TCOFLUSH  1
+#define TCIOFLUSH 2
+
+#define TCSANOW   0
+#define TCSADRAIN 1
+#define TCSAFLUSH 2
+
+
+#define EXTA    0000016
+#define EXTB    0000017
+#define CBAUD   0010017
+#define CBAUDEX 0010000
+#define CIBAUD  002003600000
+#define CMSPAR  010000000000
+#define CRTSCTS 020000000000
+
+#define XCASE   0000004
+#define ECHOCTL 0001000
+#define ECHOPRT 0002000
+#define ECHOKE  0004000
+#define FLUSHO  0010000
+#define PENDIN  0040000
+#define EXTPROC 0200000
+
+#define XTABS  0014000
+
+// #include <bits/termios.h>
+
+speed_t cfgetospeed (const struct termios *);
+speed_t cfgetispeed (const struct termios *);
+int cfsetospeed (struct termios *, speed_t);
+int cfsetispeed (struct termios *, speed_t);
+
+int tcgetattr (int, struct termios *) {
+    return -1;
+}
+
+int tcsetattr (int, int, const struct termios *) {
+    return -1;
+}
+
+int tcgetwinsize (int, struct winsize *);
+int tcsetwinsize (int, const struct winsize *);
+
+int tcsendbreak (int, int);
+int tcdrain (int);
+int tcflush (int, int);
+int tcflow (int, int);
+
+pid_t tcgetsid (int);
+
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+void cfmakeraw(struct termios *);
+int cfsetspeed(struct termios *, speed_t);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+// ====================================================================================
+
+
+
+#endif
+
 #include <unistd.h> // close
 
 #include "config.h"

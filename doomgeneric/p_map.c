@@ -663,40 +663,42 @@ void P_HitSlideLine (line_t* ld)
 boolean PTR_SlideTraverse (intercept_t* in)
 {
     line_t*	li;
-	
+	int goto_isblocking = 0;
+
     if (!in->isaline)
 	I_Error ("PTR_SlideTraverse: not a line?");
 		
     li = in->d.line;
-    
-    if ( ! (li->flags & ML_TWOSIDED) )
-    {
-	if (P_PointOnLineSide (slidemo->x, slidemo->y, li))
-	{
-	    // don't hit the back side
-	    return true;		
-	}
-	goto isblocking;
+
+    if ( ! (li->flags & ML_TWOSIDED) ) {
+	    if (P_PointOnLineSide (slidemo->x, slidemo->y, li))	{
+	        // don't hit the back side
+	        return true;
+	    }
+    	goto_isblocking = 1;
     }
+    switch (goto_isblocking) {
+        case 0: {
+            // set openrange, opentop, openbottom
+            P_LineOpening (li);
 
-    // set openrange, opentop, openbottom
-    P_LineOpening (li);
-    
-    if (openrange < slidemo->height)
-	goto isblocking;		// doesn't fit
-		
-    if (opentop - slidemo->z < slidemo->height)
-	goto isblocking;		// mobj is too high
+            if (openrange < slidemo->height)
+            	break;		// doesn't fit
 
-    if (openbottom - slidemo->z > 24*FRACUNIT )
-	goto isblocking;		// too big a step up
+            if (opentop - slidemo->z < slidemo->height)
+                break;		// mobj is too high
 
-    // this line doesn't block movement
-    return true;		
-	
+            if (openbottom - slidemo->z > 24*FRACUNIT )
+                break;		// too big a step up
+
+            // this line doesn't block movement
+            return true;
+        }
+        case 1: break;
+    }
     // the line does block movement,
     // see if it is closer than best so far
-  isblocking:		
+isblocking:
     if (in->frac < bestslidefrac)
     {
 	secondslidefrac = bestslidefrac;
@@ -704,7 +706,7 @@ boolean PTR_SlideTraverse (intercept_t* in)
 	bestslidefrac = in->frac;
 	bestslideline = li;
     }
-	
+
     return false;	// stop
 }
 
@@ -721,6 +723,7 @@ boolean PTR_SlideTraverse (intercept_t* in)
 //
 void P_SlideMove (mobj_t* mo)
 {
+    int goto_stairstep = 0;
     fixed_t		leadx;
     fixed_t		leady;
     fixed_t		trailx;
@@ -728,15 +731,19 @@ void P_SlideMove (mobj_t* mo)
     fixed_t		newx;
     fixed_t		newy;
     int			hitcount;
-		
+
     slidemo = mo;
     hitcount = 0;
-    
-  retry:
-    if (++hitcount == 3)
-	goto stairstep;		// don't loop forever
 
-    
+do {
+  retry:
+    if (++hitcount == 3) {
+    	// goto_stairstep = 1;		// don't loop forever
+    	if (!P_TryMove (mo, mo->x, mo->y + mo->momy))
+    	    P_TryMove (mo, mo->x + mo->momx, mo->y);
+    	return;
+    }
+
     // trace along the three leading corners
     if (mo->momx > 0)
     {
@@ -748,7 +755,7 @@ void P_SlideMove (mobj_t* mo)
 	leadx = mo->x - mo->radius;
 	trailx = mo->x + mo->radius;
     }
-	
+
     if (mo->momy > 0)
     {
 	leady = mo->y + mo->radius;
@@ -759,47 +766,49 @@ void P_SlideMove (mobj_t* mo)
 	leady = mo->y - mo->radius;
 	traily = mo->y + mo->radius;
     }
-		
+
     bestslidefrac = FRACUNIT+1;
-	
+
     P_PathTraverse ( leadx, leady, leadx+mo->momx, leady+mo->momy,
 		     PT_ADDLINES, PTR_SlideTraverse );
     P_PathTraverse ( trailx, leady, trailx+mo->momx, leady+mo->momy,
 		     PT_ADDLINES, PTR_SlideTraverse );
     P_PathTraverse ( leadx, traily, leadx+mo->momx, traily+mo->momy,
 		     PT_ADDLINES, PTR_SlideTraverse );
-    
+
     // move up to the wall
-    if (bestslidefrac == FRACUNIT+1)
-    {
+    if (bestslidefrac == FRACUNIT+1) {
 	// the move most have hit the middle, so stairstep
-      stairstep:
-	if (!P_TryMove (mo, mo->x, mo->y + mo->momy))
-	    P_TryMove (mo, mo->x + mo->momx, mo->y);
-	return;
+stairstep:
+	    if (!P_TryMove (mo, mo->x, mo->y + mo->momy))
+	        P_TryMove (mo, mo->x + mo->momx, mo->y);
+    	return;
     }
 
     // fudge a bit to make sure it doesn't hit
-    bestslidefrac -= 0x800;	
-    if (bestslidefrac > 0)
-    {
-	newx = FixedMul (mo->momx, bestslidefrac);
-	newy = FixedMul (mo->momy, bestslidefrac);
-	
-	if (!P_TryMove (mo, mo->x+newx, mo->y+newy))
-	    goto stairstep;
+    bestslidefrac -= 0x800;
+    if (bestslidefrac > 0) {
+    	newx = FixedMul (mo->momx, bestslidefrac);
+	    newy = FixedMul (mo->momy, bestslidefrac);
+
+	    if (!P_TryMove (mo, mo->x+newx, mo->y+newy)) {
+        	// goto_stairstep = 1;
+        	if (!P_TryMove (mo, mo->x, mo->y + mo->momy))
+        	    P_TryMove (mo, mo->x + mo->momx, mo->y);
+        	return;
+        }
     }
-    
+
     // Now continue along the wall.
     // First calculate remainder.
     bestslidefrac = FRACUNIT-(bestslidefrac+0x800);
-    
+
     if (bestslidefrac > FRACUNIT)
 	bestslidefrac = FRACUNIT;
-    
+
     if (bestslidefrac <= 0)
-	return;
-    
+	    return;
+
     tmxmove = FixedMul (mo->momx, bestslidefrac);
     tmymove = FixedMul (mo->momy, bestslidefrac);
 
@@ -807,11 +816,9 @@ void P_SlideMove (mobj_t* mo)
 
     mo->momx = tmxmove;
     mo->momy = tmymove;
-		
-    if (!P_TryMove (mo, mo->x+tmxmove, mo->y+tmymove))
-    {
-	goto retry;
-    }
+
+    // goto_retry
+    } while (!P_TryMove (mo, mo->x+tmxmove, mo->y+tmymove));
 }
 
 
@@ -931,112 +938,107 @@ boolean PTR_ShootTraverse (intercept_t* in)
     fixed_t		y;
     fixed_t		z;
     fixed_t		frac;
-    
+
     line_t*		li;
-    
+
     mobj_t*		th;
 
     fixed_t		slope;
     fixed_t		dist;
     fixed_t		thingtopslope;
     fixed_t		thingbottomslope;
-		
-    if (in->isaline)
-    {
-	li = in->d.line;
-	
-	if (li->special)
-	    P_ShootSpecialLine (shootthing, li);
 
-	if ( !(li->flags & ML_TWOSIDED) )
-	    goto hitline;
-	
-	// crosses a two sided line
-	P_LineOpening (li);
-		
-	dist = FixedMul (attackrange, in->frac);
+    if (in->isaline) {
+        do {
+	        li = in->d.line;
+	    
+	        if (li->special)
+	            P_ShootSpecialLine (shootthing, li);
 
-        // e6y: emulation of missed back side on two-sided lines.
-        // backsector can be NULL when emulating missing back side.
 
-        if (li->backsector == NULL)
-        {
-            slope = FixedDiv (openbottom - shootz , dist);
-            if (slope > aimslope)
-                goto hitline;
+	        if ( !(li->flags & ML_TWOSIDED) )
+	            break; // goto_hitline;
 
-            slope = FixedDiv (opentop - shootz , dist);
-            if (slope < aimslope)
-                goto hitline;
-        }
-        else
-        {
-            if (li->frontsector->floorheight != li->backsector->floorheight)
-            {
+	        // crosses a two sided line
+	        P_LineOpening (li);
+
+	        dist = FixedMul (attackrange, in->frac);
+
+            // e6y: emulation of missed back side on two-sided lines.
+            // backsector can be NULL when emulating missing back side.
+
+            if (li->backsector == NULL) {
                 slope = FixedDiv (openbottom - shootz , dist);
                 if (slope > aimslope)
-                    goto hitline;
+            	    break; // goto_hitline;
+
+                    slope = FixedDiv (opentop - shootz , dist);
+                    if (slope < aimslope)
+                	    break; // goto_hitline;
+            } else {
+                if (li->frontsector->floorheight != li->backsector->floorheight) {
+                    slope = FixedDiv (openbottom - shootz , dist);
+                    if (slope > aimslope)
+        	            break; // goto_hitline;
+                }
+
+                if (li->frontsector->ceilingheight != li->backsector->ceilingheight) {
+                    slope = FixedDiv (opentop - shootz , dist);
+                    if (slope < aimslope)
+        	            break; // goto_hitline;
+                }
             }
 
-            if (li->frontsector->ceilingheight != li->backsector->ceilingheight)
-            {
-                slope = FixedDiv (opentop - shootz , dist);
-                if (slope < aimslope)
-                    goto hitline;
-            }
-        }
+	        // shot continues
+	        return true;
+        } while(0);
 
-	// shot continues
-	return true;
-	
-	
-	// hit line
-      hitline:
-	// position a bit closer
-	frac = in->frac - FixedDiv (4*FRACUNIT,attackrange);
-	x = trace.x + FixedMul (trace.dx, frac);
-	y = trace.y + FixedMul (trace.dy, frac);
-	z = shootz + FixedMul (aimslope, FixedMul(frac, attackrange));
+	    // hit line
+hitline:
+	    // position a bit closer
+	    frac = in->frac - FixedDiv (4*FRACUNIT,attackrange);
+	    x = trace.x + FixedMul (trace.dx, frac);
+	    y = trace.y + FixedMul (trace.dy, frac);
+	    z = shootz + FixedMul (aimslope, FixedMul(frac, attackrange));
 
-	if (li->frontsector->ceilingpic == skyflatnum)
-	{
-	    // don't shoot the sky!
-	    if (z > li->frontsector->ceilingheight)
-		return false;
-	    
-	    // it's a sky hack wall
-	    if	(li->backsector && li->backsector->ceilingpic == skyflatnum)
-		return false;		
-	}
+	    if (li->frontsector->ceilingpic == skyflatnum)
+	    {
+	        // don't shoot the sky!
+	        if (z > li->frontsector->ceilingheight)
+		    return false;
 
-	// Spawn bullet puffs.
-	P_SpawnPuff (x,y,z);
-	
-	// don't go any farther
-	return false;	
+	        // it's a sky hack wall
+	        if	(li->backsector && li->backsector->ceilingpic == skyflatnum)
+		    return false;
+	    }
+
+	    // Spawn bullet puffs.
+	    P_SpawnPuff (x,y,z);
+
+	    // don't go any farther
+	    return false;
     }
-    
+
     // shoot a thing
     th = in->d.thing;
     if (th == shootthing)
-	return true;		// can't shoot self
-    
+    	return true;		// can't shoot self
+
     if (!(th->flags&MF_SHOOTABLE))
-	return true;		// corpse or something
-		
+	    return true;		// corpse or something
+
     // check angles to see if the thing can be aimed at
     dist = FixedMul (attackrange, in->frac);
     thingtopslope = FixedDiv (th->z+th->height - shootz , dist);
 
     if (thingtopslope < aimslope)
-	return true;		// shot over the thing
+	    return true;		// shot over the thing
 
     thingbottomslope = FixedDiv (th->z - shootz, dist);
 
     if (thingbottomslope > aimslope)
-	return true;		// shot under the thing
+	    return true;		// shot under the thing
 
-    
     // hit thing
     // position a bit closer
     frac = in->frac - FixedDiv (10*FRACUNIT,attackrange);
@@ -1048,16 +1050,16 @@ boolean PTR_ShootTraverse (intercept_t* in)
     // Spawn bullet puffs or blod spots,
     // depending on target type.
     if (in->d.thing->flags & MF_NOBLOOD)
-	P_SpawnPuff (x,y,z);
+	    P_SpawnPuff (x,y,z);
     else
-	P_SpawnBlood (x,y,z, la_damage);
+    	P_SpawnBlood (x,y,z, la_damage);
 
     if (la_damage)
-	P_DamageMobj (th, shootthing, shootthing, la_damage);
+    	P_DamageMobj (th, shootthing, shootthing, la_damage);
 
     // don't go any farther
     return false;
-	
+
 }
 
 

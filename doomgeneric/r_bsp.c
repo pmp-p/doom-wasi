@@ -138,35 +138,36 @@ R_ClipSolidWallSegment
 	return;			
 		
     next = start;
-    while (last >= (next+1)->first-1)
-    {
-	// There is a fragment between two posts.
-	R_StoreWallRange (next->last + 1, (next+1)->first - 1);
-	next++;
-	
-	if (last <= next->last)
-	{
-	    // Bottom is contained in next.
-	    // Adjust the clip size.
-	    start->last = next->last;	
-	    goto crunch;
-	}
+    int goto_crunch=0;
+    while (last >= (next+1)->first-1) {
+	    // There is a fragment between two posts.
+	    R_StoreWallRange (next->last + 1, (next+1)->first - 1);
+	    next++;
+
+	    if (last <= next->last) {
+	        // Bottom is contained in next.
+	        // Adjust the clip size.
+	        start->last = next->last;
+	        goto_crunch =1;
+            break;
+	    }
     }
-	
+if (!goto_crunch) {
     // There is a fragment after *next.
     R_StoreWallRange (next->last + 1, last);
     // Adjust the clip size.
     start->last = last;
-	
+
     // Remove start+1 to next from the clip list,
     // because start now covers their area.
+}
   crunch:
     if (next == start)
     {
 	// Post just extended past the bottom of one post.
 	return;
     }
-    
+
 
     while (next++ != newend)
     {
@@ -312,20 +313,26 @@ void R_AddLine (seg_t*	line)
 	
     backsector = line->backsector;
 
+    backsector = line->backsector;
+    int gotoclip = 0;
+do {
     // Single sided line?
-    if (!backsector)
-	goto clipsolid;		
+    if (!backsector) {
+        gotoclip = 1; //goto_clipsolid;
+        break;
+    }
 
     // Closed door.
-    if (backsector->ceilingheight <= frontsector->floorheight
-	|| backsector->floorheight >= frontsector->ceilingheight)
-	goto clipsolid;		
+    if (backsector->ceilingheight <= frontsector->floorheight || backsector->floorheight >= frontsector->ceilingheight) {
+	    gotoclip = 1; //goto_clipsolid;
+        break;
+    }
 
     // Window.
     if (backsector->ceilingheight != frontsector->ceilingheight
 	|| backsector->floorheight != frontsector->floorheight)
-	goto clippass;	
-		
+	    break; // goto clippass;
+
     // Reject empty lines used for triggers
     //  and special events.
     // Identical floor and ceiling on both sides,
@@ -336,16 +343,21 @@ void R_AddLine (seg_t*	line)
 	&& backsector->lightlevel == frontsector->lightlevel
 	&& curline->sidedef->midtexture == 0)
     {
-	return;
+	    return;
     }
-    
-				
-  clippass:
-    R_ClipPassWallSegment (x1, x2-1);	
-    return;
-		
-  clipsolid:
-    R_ClipSolidWallSegment (x1, x2-1);
+} while (0);
+
+    switch (gotoclip) {
+        case 0: {
+clippass:
+            R_ClipPassWallSegment (x1, x2-1);
+            return;
+        }
+        case 1 : {
+clipsolid:
+            R_ClipSolidWallSegment (x1, x2-1);
+        }
+    }
 }
 
 

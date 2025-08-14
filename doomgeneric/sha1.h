@@ -20,8 +20,9 @@
 
 #include "doomtype.h"
 
+#if 1 // !defined(__wasi__)
 typedef struct sha1_context_s sha1_context_t;
-typedef byte sha1_digest_t[20];
+typedef uint8_t sha1_digest_t[20];
 
 struct sha1_context_s {
     uint32_t h0,h1,h2,h3,h4;
@@ -35,6 +36,7 @@ void SHA1_Update(sha1_context_t *context, byte *buf, size_t len);
 void SHA1_Final(sha1_digest_t digest, sha1_context_t *context);
 void SHA1_UpdateInt32(sha1_context_t *context, unsigned int val);
 void SHA1_UpdateString(sha1_context_t *context, char *str);
+#endif
 
 #endif /* #ifndef __SHA1_H__ */
 

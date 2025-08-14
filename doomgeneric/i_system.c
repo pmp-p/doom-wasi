@@ -157,7 +157,7 @@ byte *I_ZoneBase (int *size)
 
     zonemem = AutoAllocMemory(size, default_ram, min_ram);
 
-    printf("zone memory: %p, %x allocated for zone\n", 
+    printf("zone memory: %p, %x allocated for zone\n",
            zonemem, *size);
 
     return zonemem;
@@ -191,7 +191,7 @@ void I_PrintStartupBanner(char *gamedescription)
     I_PrintDivider();
     I_PrintBanner(gamedescription);
     I_PrintDivider();
-    
+
     printf(
     " " PACKAGE_NAME " is free software, covered by the GNU General Public\n"
     " License.  There is NO warranty; not even for MERCHANTABILITY or FITNESS\n"
@@ -201,7 +201,7 @@ void I_PrintStartupBanner(char *gamedescription)
     I_PrintDivider();
 }
 
-// 
+//
 // I_ConsoleStdout
 //
 // Returns true if stdout is a real console, false if it is a file
@@ -248,8 +248,8 @@ void I_Quit (void)
     atexit_listentry_t *entry;
 
     // Run through all exit functions
- 
-    entry = exit_funcs; 
+
+    entry = exit_funcs;
 
     while (entry != NULL)
     {
@@ -271,7 +271,11 @@ void I_Quit (void)
 
 static int ZenityAvailable(void)
 {
+#if defined(XCC)
+    return 0;
+#else
     return system(ZENITY_BINARY " --help >/dev/null 2>&1") == 0;
+#endif
 }
 
 // Escape special characters in the given string so that they can be
@@ -322,11 +326,14 @@ static char *EscapeShellString(char *string)
 
 static int ZenityErrorBox(char *message)
 {
-    int result;
+#if defined(XCC)
+    puts(message);
+    return 0;
+#else
+    int result = 0;
     char *escaped_message;
     char *errorboxpath;
     static size_t errorboxpath_size;
-
     if (!ZenityAvailable())
     {
         return 0;
@@ -343,8 +350,8 @@ static int ZenityErrorBox(char *message)
 
     free(errorboxpath);
     free(escaped_message);
-
     return result;
+#endif
 }
 
 #endif /* !defined(_WIN32) && !defined(__MACOSX__) && !defined(__DJGPP__) */

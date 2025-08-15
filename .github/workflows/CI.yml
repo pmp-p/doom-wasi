@@ -28,7 +28,7 @@ jobs:
 
       - name: prepare
         run: |
-          sudo apt-get install curl gdb wget
+          sudo apt-get install curl gdb wget llvm
           sysctl kernel.core_pattern
           sudo sysctl -w kernel.core_pattern=/tmp/core-%e.%p.%h.%t
 

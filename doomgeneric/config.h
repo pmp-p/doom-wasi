@@ -100,5 +100,7 @@
 #define FILES_DIR "."
 
 #if defined(__wasi__)
-#   include "doomgeneric_wasi.h"
+#   if !defined(noextra)
+#      include "doomgeneric_wasi.h"
+#   endif
 #endif

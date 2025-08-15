@@ -2,6 +2,7 @@
 // Copyright (C) 2025 Techflash
 // Based on doomgeneric_sdl.c
 
+
 #include "doomkeys.h"
 #include "m_argv.h"
 #include "doomgeneric.h"
@@ -11,8 +12,23 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <time.h>
 
-#include <sys/time.h>
+
+// ======================== platform support for wcc ========================================
+// NEED REVIEW some of that stuff may have come from AI to quick fill in the gaps
+
+
+#define implementation
+#include "doomgeneric_wasi.h"
+#undef implementation
+
+// ================================================================================================
+
+
+
+
+
 
 
 long frames = 0;
@@ -70,7 +86,7 @@ void DG_Init(void) {
 static const char base64_table[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-base64_encode(const uint8_t *data, size_t input_length) {
+void base64_encode(const uint8_t *data, size_t input_length) {
     size_t output_length = 4 * ((input_length + 2) / 3);
 
     for (size_t i = 0, j = 0; i < input_length;) {

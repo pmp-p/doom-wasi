@@ -14,3 +14,4 @@ doomgeneric.map
 /doom1.wad
 .gdb_history
 /xcc
+/WASI_SDK_PREFIX

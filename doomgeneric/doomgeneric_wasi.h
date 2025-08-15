@@ -1,4 +1,5 @@
 #pragma once
+
 #if !defined(implementation)
 #   pragma message "proto libc extra"
 #   define SCOPE(name) extern
@@ -11,15 +12,61 @@
 #   define End }
 #endif
 
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
+
+// sys/time.h:
+#include "wasi/sys/time.h"
+
+
+#if !defined(__clang__)
+
+// <sys/iotctl.h>
+#include "wasi/sys/ioctl.h"
+
+
+// <termios.h>
+#include "wasi/termios.h"
+
+// <linux/kd.h>
+#define 	KB_84		0x01
+#define 	KB_101		0x02
+#define KDSKBMODE	0x4B45	/* sets current keyboard mode */
+#define KDGKBTYPE	0x4B33
+#define KDGKBMODE	0x4B44
+#define	K_MEDIUMRAW	0x02
+
+// <stdio.h>
+SCOPE("rename")
+int rename(const char *oldpath, const char *newpath)
+Begin
+#if defined(implementation)
+    // don't lie
+    return -1;
+#endif
+End
+
+// <unistd.h>
+typedef unsigned long __useconds_t;
+
+
+SCOPE("usleep")
+int usleep (__useconds_t __useconds)
+Begin
+#if defined(implementation)
+    // lie !
+    return 0;
+#endif
+End
 
 
 SCOPE("sscanf")
 int sscanf(const char *input, const char *format, ...)
 Begin
 #if defined(implementation)
-#   include <ctype.h>
-#   include <stdlib.h>
-#   include <stdarg.h>
     va_list args;
     va_start(args, format);
 
@@ -63,3 +110,20 @@ Begin
     return assigned;
 #endif
 End
+
+
+
+
+#endif // !__clang__
+
+
+// <stdlib.h>
+SCOPE("system")
+int system(const char *command)
+Begin
+#if defined(implementation)
+    // lie !q
+    return 0;
+#endif
+End
+

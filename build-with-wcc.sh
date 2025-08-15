@@ -22,7 +22,7 @@ pushd xcc
 popd
 
 
-XCC=$(pwd)/xcc
+CC_DIR=$(pwd)/xcc
 
 ulimit -c unlimited
 rm -f /tmp/core-wcc.*
@@ -31,17 +31,29 @@ echo "
 
     ----------------------- building ------------------------
 
+Unresolved: env.putchar
+Unresolved: errno
+Unresolved: _CLOCK_REALTIME
+Unresolved: env.usleep
+Unresolved: env.sscanf
+
+
 "
+
+mkdir -p ./bin
+rm -f bin/doom-wcc.wasm
+
 if make \
  -C doomgeneric -f Makefile.wasi \
- CC=${XCC}/wcc \
- AS=${XCC}/as \
- LD=${XCC}/ld \
- OUTPUT=doom.wcc \
- CFLAGS="-I${XCC}/include -DXCC -D__wasi__ -D__wasm32__ -DNORMALUNIX -DSNDSERV -D_DEFAULT_SOURCE" \
+ CC=${CC_DIR}/wcc \
+ AS=${CC_DIR}/as \
+ LD=${CC_DIR}/ld \
+ OUTPUT=../bin/doom-wcc.wasm \
+ CFLAGS="-I${WCC}/include -D__wasi__ -D__wasm32__ -DNORMALUNIX -DSNDSERV -D_DEFAULT_SOURCE" \
  LDFLAGS= \
  LIBS=""
 then
+
 
     if which wasmtime
     then
@@ -51,7 +63,7 @@ then
         echo -n "installed wasmtime :"
     fi
     wasmtime --version
-    WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir . ./doomgeneric/doom.wcc
+    WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir . ./bin/doom-wcc.wasm
 else
     if ls /tmp/core-wcc.* 2>/dev/null
     then
@@ -73,7 +85,7 @@ END
     build failed
 
 "
-        echo $LINENO
+        exit $LINENO
     fi
 
 fi

@@ -61,11 +61,7 @@
 // standard and defined to include stdint.h, so include this.
 
 #include <inttypes.h>
-
-
-#if defined(XCC)
 #include <stdint.h>
-#endif
 
 #ifdef __cplusplus
 

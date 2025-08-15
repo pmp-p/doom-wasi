@@ -3,9 +3,9 @@ reset
 
 if  [ -d xcc ]
 then
-    echo local wip xcc
+    echo "local wip xcc"
 else
-    echo xcc (patched)
+    echo "xcc (patched)"
     git clone --recursive --no-tags --depth 1 --single-branch --branch main https://github.com/tyfkda/xcc
 
     pushd xcc

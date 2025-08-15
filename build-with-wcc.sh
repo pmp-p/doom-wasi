@@ -70,7 +70,21 @@ then
         echo -n "installed wasmtime :"
     fi
     which wasmtime && wasmtime --version
-    WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir . ./bin/doom-wcc.wasm
+
+    if ${CI:-false}
+    then
+        echo "
+
+---------------------------------------------------------------
+    Buil success
+    but cannot run in CI, need frame limit and exit
+
+---------------------------------------------------------------
+
+        "
+    else
+        WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir . ./bin/doom-wcc.wasm
+    fi
 else
     if ls /tmp/core-wcc.* 2>/dev/null
     then

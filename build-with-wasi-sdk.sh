@@ -52,7 +52,20 @@ then
 
     fi
     which wasmtime && wasmtime --version
-    # WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir . ./bin/doom-wasisdk.wasm
+    if ${CI:-false}
+    then
+        echo "
+
+---------------------------------------------------------------
+    Buil success
+    but cannot run in CI, need frame limit and exit
+
+---------------------------------------------------------------
+
+"
+    else
+        WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir . ./bin/doom-wasisdk.wasm
+    fi
     exit 0
 else
     echo "

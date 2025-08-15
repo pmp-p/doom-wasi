@@ -1,4 +1,4 @@
-/* config.hin.  Generated from configure.ac by autoheader.  */
+#pragma once
 
 /* Define to 1 if you have the <dev/isa/spkrio.h> header file. */
 #undef HAVE_DEV_ISA_SPKRIO_H
@@ -98,3 +98,7 @@
 
 /* Define to the directory where all game files are located */
 #define FILES_DIR "."
+
+#if defined(__wasi__)
+#   include "doomgeneric_wasi.h"
+#endif

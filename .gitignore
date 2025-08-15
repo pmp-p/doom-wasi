@@ -11,4 +11,6 @@ Release/
 Build/
 /doomgeneric/doomgeneric
 doomgeneric.map
-doom1.wad
+/doom1.wad
+.gdb_history
+/xcc

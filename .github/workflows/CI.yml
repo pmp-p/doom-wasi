@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  workflow_dispatch:
+
+  release:
+    # this runs CI only when a release is created at first (and not when it is
+    # edited or published)
+    types: [created]
+
+  push:
+    branches: main
+
+
+jobs:
+  build:
+    name: doom wasi xcc(wcc) build
+    runs-on: ubuntu-24.04
+    env:
+      SDKROOT: /tmp/sdk
+      CONTAINER_PATH: /tmp/fs
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: false
+
+      - name: prepare
+        run: |
+          sudo apt-get install curl gdb wget
+          sysctl kernel.core_pattern
+          sudo sysctl -w kernel.core_pattern=/tmp/core-%e.%p.%h.%t
+
+      - name: build
+        run: |
+          bash ./build-with-wcc.sh
+
+#      - name: Upload sdk to Github Releases
+#        if: github.event_name == 'release'
+#        uses: svenstaro/upload-release-action@2.9.0
+#        with:
+#          repo_token: ${{ secrets.GITHUB_TOKEN }}
+#          file: /tmp/sdk/lib*.tar.gz
+#          file_glob: true
+#          tag: ${{ github.ref }}
+
+
+#      - name : "Upload to GitHub pages"
+#        uses: JamesIves/github-pages-deploy-action@v4.4.1
+#        with:
+#          branch: gh-pages
+#          folder: /tmp/web

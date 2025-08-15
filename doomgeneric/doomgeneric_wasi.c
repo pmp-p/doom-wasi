@@ -70,7 +70,7 @@ void DG_Init(void) {
 static const char base64_table[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-unsigned char *base64_encode(const uint8_t *data, size_t input_length) {
+base64_encode(const uint8_t *data, size_t input_length) {
     size_t output_length = 4 * ((input_length + 2) / 3);
 
     for (size_t i = 0, j = 0; i < input_length;) {
@@ -85,31 +85,20 @@ unsigned char *base64_encode(const uint8_t *data, size_t input_length) {
         BASE64[j++] = (i > input_length + 1) ? '=' : base64_table[(triple >> 6) & 0x3F];
         BASE64[j++] = (i > input_length) ? '=' : base64_table[triple & 0x3F];
     }
-
     BASE64[output_length] = '\0';
-    return BASE64;
 }
 
 
 
-uint8_t * write_bmp(uint8_t *rgba, int width, int height, size_t *bmp_size) {
+void store_bmp(uint8_t *rgba, int width, int height, size_t *bmp_size) {
     int row_stride = (width * 3 + 3) & ~3; // pad to 4 bytes
     int pixel_data_size = row_stride * height;
     *bmp_size = (size_t)(BMP_HEADER_SIZE + pixel_data_size);
-/*
-    // --- BMP Header ---
-    memset(BMP, 0, BMP_HEADER_SIZE);
-    BMP[0] = 'B';
-    BMP[1] = 'M';
-    *(uint32_t*)&BMP[2]  = (uint32_t)(*bmp_size);
-    *(uint32_t*)&BMP[10] = BMP_HEADER_SIZE;
-    *(uint32_t*)&BMP[14] = 40; // DIB header size
-    *(int32_t*)&BMP[18]  = width;
-    *(int32_t*)&BMP[22]  = height;
-    *(uint16_t*)&BMP[26] = 1;   // planes
-    *(uint16_t*)&BMP[28] = 24;  // bits per pixel
-    *(uint32_t*)&BMP[34] = pixel_data_size;
-*/
+
+    // BMP Header already set, see init_bmp()
+
+    // TODO: pre encode  the header to b64, remove end mark and stream b64 directly from here
+
     // --- Pixel Data ---
     uint8_t *pixels = BMP + BMP_HEADER_SIZE;
     for (int y = 0; y < height; y++) {
@@ -123,8 +112,6 @@ uint8_t * write_bmp(uint8_t *rgba, int width, int height, size_t *bmp_size) {
             row[p] = 0;
         }
     }
-
-    return BMP;
 }
 
 
@@ -133,7 +120,7 @@ void DG_DrawFrame() {
 		return;
 	}
     size_t bmp_size;
-    write_bmp((unsigned char*)DG_ScreenBuffer, DOOMGENERIC_RESX, DOOMGENERIC_RESY, &bmp_size);
+    store_bmp((unsigned char*)DG_ScreenBuffer, DOOMGENERIC_RESX, DOOMGENERIC_RESY, &bmp_size);
     base64_encode(BMP, bmp_size);
     printf("\033[H;\033]1337;File=inline=1;width=auto;height=auto;preserveAspectRatio=1;name=bmpdump;size=%zu:%s\a\n", bmp_size, BASE64);
     puts("frame");

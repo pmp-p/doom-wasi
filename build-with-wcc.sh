@@ -11,7 +11,7 @@ else
     pushd xcc
         wget https://patch-diff.githubusercontent.com/raw/tyfkda/xcc/pull/214.diff
         patch -p1 <  ../214.diff
-    podpd
+    popd
 fi
 
 pushd xcc

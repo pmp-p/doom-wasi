@@ -1,7 +1,18 @@
 #!/bin/bash
 reset
 
-[ -d xcc ] || git clone --recursive --no-tags --depth 1 --single-branch --branch main https://github.com/tyfkda/xcc
+if  [ -d xcc ]
+then
+    echo local wip xcc
+else
+    echo xcc (patched)
+    git clone --recursive --no-tags --depth 1 --single-branch --branch main https://github.com/tyfkda/xcc
+
+    pushd xcc
+        wget https://patch-diff.githubusercontent.com/raw/tyfkda/xcc/pull/214.diff
+        patch -p1 <  ../214.diff
+    podpd
+fi
 
 pushd xcc
     make clean

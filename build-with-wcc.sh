@@ -15,14 +15,10 @@ else
 fi
 
 pushd xcc
-    make clean
+    make clean >/dev/null 2>&1
     make -j$(nproc) \
      CC=clang OPTIMIZE="-O0 -g3"  \
-     xcc
-
-    make -j$(nproc) \
-     CC=clang OPTIMIZE="-O0 -g3"  \
-     wcc
+     all wcc >/tmp/log 2>&1 || ( cat /tmp/log  && exit $LINENO )
 popd
 
 
@@ -31,7 +27,11 @@ XCC=$(pwd)/xcc
 ulimit -c unlimited
 rm -f /tmp/core-wcc.*
 sudo sysctl -w kernel.core_pattern=/tmp/core-%e.%p.%h.%t
+echo "
 
+    ----------------------- building ------------------------
+
+"
 if make \
  -C doomgeneric -f Makefile.wasi \
  CC=${XCC}/wcc \
@@ -53,14 +53,27 @@ then
     wasmtime --version
     WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir . ./doomgeneric/doom.wcc
 else
-    if file /tmp/core-wcc.*
+    if ls /tmp/core-wcc.* 2>/dev/null
     then
+        echo "
+
+            ------------ crash ------------
+
+"
         pushd xcc
             gdb wcc -c /tmp/core-wcc.* <<END
 bt
 q
 END
+        exit $LINENO
         popd
+    else
+        echo "
+
+    build failed
+
+"
+        echo $LINENO
     fi
 
 fi

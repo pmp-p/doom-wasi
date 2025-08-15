@@ -24,6 +24,8 @@
 
 #if !defined(__clang__)
 
+// all those until endif are handled by wasi-sdk (tested 27) at compile time.
+
 // <sys/iotctl.h>
 #include "wasi/sys/ioctl.h"
 

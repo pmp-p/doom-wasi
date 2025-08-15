@@ -32,13 +32,14 @@ jobs:
           sysctl kernel.core_pattern
           sudo sysctl -w kernel.core_pattern=/tmp/core-%e.%p.%h.%t
 
+      - name: build with wasi-sdk
+        run: |
+          bash ./build-with-wasi-sdk.sh
+
+
       - name: build with wcc
         run: |
           bash ./build-with-wcc.sh clean
-
-      - name: build with wasi-sdk
-        run: |
-          bash ./build-with-wasi-sdk.sh clean
 
 
 #      - name: Upload sdk to Github Releases

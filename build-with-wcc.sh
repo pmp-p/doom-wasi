@@ -43,6 +43,12 @@ Unresolved: env.sscanf
 mkdir -p ./bin
 rm -f bin/doom-wcc.wasm
 
+if echo $@|grep clean
+then
+    make -C doomgeneric clean
+fi
+
+
 if make \
  -C doomgeneric -f Makefile.wasi \
  CC=${CC_DIR}/wcc \

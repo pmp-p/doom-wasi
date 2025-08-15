@@ -34,7 +34,7 @@ jobs:
 
       - name: build with wasi-sdk
         run: |
-          bash ./build-with-wasi-sdk.sh
+          bash ./build-with-wasi-sdk.sh clean
 
 
       - name: build with wcc

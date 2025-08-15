@@ -47,10 +47,13 @@ then
         echo -n "found wasmtime :"
     else
         curl https://wasmtime.dev/install.sh -sSf | bash
+        . $HOME/.bashrc
         echo -n "installed wasmtime :"
+
     fi
     wasmtime --version
-    WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir . ./bin/doom-wasisdk.wasm
+    # WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir . ./bin/doom-wasisdk.wasm
+    exit 0
 else
     echo "
 

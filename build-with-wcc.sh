@@ -66,6 +66,7 @@ then
         echo -n "found wasmtime :"
     else
         curl https://wasmtime.dev/install.sh -sSf | bash
+        . $HOME/.bashrc
         echo -n "installed wasmtime :"
     fi
     wasmtime --version

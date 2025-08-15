@@ -55,7 +55,7 @@ if make \
  AS=${CC_DIR}/as \
  LD=${CC_DIR}/ld \
  OUTPUT=../bin/doom-wcc.wasm \
- CFLAGS="-I${WCC}/include -D__wasi__ -D__wasm32__ -DNORMALUNIX -DSNDSERV -D_DEFAULT_SOURCE" \
+ CFLAGS="-I${WCC}/include -D__xcc__ -D__wcc__ -D__wasi__ -D__wasm32__ -DNORMALUNIX -DSNDSERV -D_DEFAULT_SOURCE" \
  LDFLAGS= \
  LIBS=""
 then

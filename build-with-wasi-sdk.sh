@@ -51,7 +51,7 @@ then
         echo -n "installed wasmtime :"
 
     fi
-    wasmtime --version
+    which wasmtime && wasmtime --version
     # WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir . ./bin/doom-wasisdk.wasm
     exit 0
 else

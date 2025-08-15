@@ -29,8 +29,11 @@ jobs:
       - name: prepare
         run: |
           sudo apt-get install curl gdb wget llvm
+          curl https://wasmtime.dev/install.sh -sSf | bash
+          which wasmtime && wasmtime --version
           sysctl kernel.core_pattern
           sudo sysctl -w kernel.core_pattern=/tmp/core-%e.%p.%h.%t
+         
 
       - name: build with wasi-sdk
         run: |
